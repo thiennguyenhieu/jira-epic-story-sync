@@ -1,0 +1,25 @@
+﻿Epic,Epic_Summary(customfield_10004),Story,Story_Description(description),RE_Task
+Basic UI Navigation,Basic UI Navigation,Main Menu - Display Operating Modes List,"Summay: <input>
+Link to L4 Requirement: <input>
+Link to Design Figma: <input>
+Acceptance Criteria: <input>
+DOR: AC is updated and agreed by: PO, Tester, RE L4, Development Team by give comment. Ex: ""PO reviewed AC and agreed""
+DOD: <input>",SwReq OV NXP684 Specific UI App - Main Menu - Display Operating Modes List
+Basic UI Navigation,Basic UI Navigation,Operating Mode Modifiers - Display Program Selection Menu,"Summay: <input>
+Link to L4 Requirement: <input>
+Link to Design Figma: <input>
+Acceptance Criteria: <input>
+DOR: AC is updated and agreed by: PO, Tester, RE L4, Development Team by give comment. Ex: ""PO reviewed AC and agreed""
+DOD: <input>",SwReq OV NXP684 Specific UI App - Operating Mode Modifiers - Display Program Selection Menu
+Basic UI Navigation,Basic UI Navigation,Operating Mode Modifiers - Display Configuration Menu,"Summay: <input>
+Link to L4 Requirement: <input>
+Link to Design Figma: <input>
+Acceptance Criteria: <input>
+DOR: AC is updated and agreed by: PO, Tester, RE L4, Development Team by give comment. Ex: ""PO reviewed AC and agreed""
+DOD: <input>",SwReq OV NXP684 Specific UI App - Operating Mode Modifiers - Display Configuration Menu
+First Use,First Use,BasicSetting-Language (first use),"Summay: <input>
+Link to L4 Requirement: <input>
+Link to Design Figma: <input>
+Acceptance Criteria: <input>
+DOR: AC is updated and agreed by: PO, Tester, RE L4, Development Team by give comment. Ex: ""PO reviewed AC and agreed""
+DOD: <input>",SwReq OV NXP684 Specific UI App - BasicSetting-Language (first use)
