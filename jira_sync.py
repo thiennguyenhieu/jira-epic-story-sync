@@ -242,6 +242,54 @@ def process_csv(project_key, csv_path):
 
     print(f"\nLog saved to {log_filename}")
 
+def bulk_replace_text_in_project(project_key, old_text, new_text):
+    """
+    Find all issues in the given project whose summary or description contains old_text,
+    and replace occurrences with new_text.
+
+    Example:
+        bulk_replace_text_in_project("NXX801THDP", 
+                                     "SwReq OV NXP684 Specific UI App", 
+                                     "SwReq OV NXX801 Specific UI App")
+    """
+    print(f"Searching in project {project_key} for text: '{old_text}'")
+    jql = f'project = "{project_key}" AND (summary ~ "{old_text}" OR description ~ "{old_text}")'
+    resp = jira_request("GET", f"search?jql={jql}&maxResults=500&fields=summary,description")
+    if resp.status_code != 200:
+        print(f"Failed to search Jira issues: {resp.status_code} {resp.text}")
+        return
+
+    data = resp.json()
+    issues = data.get("issues", [])
+    print(f"Found {len(issues)} issues containing '{old_text}'")
+
+    for issue in issues:
+        key = issue["key"]
+        fields = issue["fields"]
+        summary = fields.get("summary") or ""
+        description = fields.get("description") or ""
+        updated = False
+
+        # Replace in summary
+        if old_text in summary:
+            summary = summary.replace(old_text, new_text)
+            updated = True
+
+        # Replace in description
+        if old_text in description:
+            description = description.replace(old_text, new_text)
+            updated = True
+
+        if updated:
+            payload = {"fields": {"summary": summary, "description": description}}
+            put_resp = jira_request("PUT", f"issue/{key}", json=payload)
+            if put_resp.status_code == 204:
+                print(f"Updated {key}")
+            else:
+                print(f"Failed to update {key}: {put_resp.status_code} {put_resp.text}")
+        else:
+            print(f"No change for {key}")
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python jira_sync.py <PROJECT_KEY> <CSV_FILENAME>")
