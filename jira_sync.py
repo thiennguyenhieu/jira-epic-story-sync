@@ -62,6 +62,26 @@ def get_epic_link_field():
         pass
     return "customfield_10014"
 
+def get_available_link_types():
+    """Get all available issue link types in JIRA."""
+    try:
+        resp = jira_request("GET", "issueLinkType")
+        if resp.status_code == 200:
+            link_types = resp.json().get("issueLinkTypes", [])
+            print("Available link types:")
+            for link_type in link_types:
+                name = link_type.get("name", "")
+                inward = link_type.get("inward", "")
+                outward = link_type.get("outward", "")
+                print(f"  - {name}: {inward} / {outward}")
+            return [lt["name"] for lt in link_types]
+        else:
+            print(f"Failed to get link types: {resp.status_code}")
+            return []
+    except Exception as e:
+        print(f"Error getting link types: {e}")
+        return []
+
 def create_issue(project_key, summary, issue_type, epic_key=None, epic_link_field=None,
                  description=None, epic_name=None, writer=None):
     """Create a Jira issue of the given type."""
@@ -118,6 +138,50 @@ def update_epic_link(issue_key, epic_key, epic_link_field, writer):
         writer.writerow([timestamp, "Failed", issue_key, "Story/Task", epic_key, msg])
     return False
 
+def create_issue_link(inward_issue_key, outward_issue_key, link_type="Needs", writer=None):
+    """Create an issue link between two issues."""
+    payload = {
+        "type": {"name": link_type},
+        "inwardIssue": {"key": inward_issue_key},
+        "outwardIssue": {"key": outward_issue_key}
+    }
+    print(f"DEBUG: Creating link with payload: {payload}")
+    resp = jira_request("POST", "issueLink", json=payload)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    if resp.status_code == 201:
+        print(f"Created link: {inward_issue_key} {link_type} {outward_issue_key}")
+        if writer:
+            writer.writerow([timestamp, "Created Link", inward_issue_key, "Link", outward_issue_key, f"{link_type}"])
+        return True
+    else:
+        msg = resp.text.strip().replace("\n", " ")
+        print(f"Failed to create link {inward_issue_key} -> {outward_issue_key}: {msg}")
+        if writer:
+            writer.writerow([timestamp, "Failed Link", inward_issue_key, "Link", outward_issue_key, msg])
+        return False
+
+def get_existing_links(issue_key):
+    """Get existing issue links for a given issue."""
+    resp = jira_request("GET", f"issue/{issue_key}?fields=issuelinks")
+    if resp.status_code == 200:
+        return resp.json()["fields"].get("issuelinks", [])
+    return []
+
+def is_already_linked(issue_key, target_key, link_type="Needs"):
+    """Check if two issues are already linked with the specified link type."""
+    links = get_existing_links(issue_key)
+    for link in links:
+        link_name = link.get("type", {}).get("name", "")
+        inward_key = link.get("inwardIssue", {}).get("key", "")
+        outward_key = link.get("outwardIssue", {}).get("key", "")
+        
+        if link_name == link_type:
+            if (inward_key == issue_key and outward_key == target_key) or \
+               (inward_key == target_key and outward_key == issue_key):
+                return True
+    return False
+
 def detect_delimiter(file_path):
     """Detect CSV delimiter (tab or comma)."""
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -155,8 +219,10 @@ def process_csv(project_key, csv_path):
         for row in reader:
             epic_summary = row.get("Epic", "").strip()
             epic_description = row.get("Epic_Summary(customfield_10004)", "").strip()
+            epic_upper_link = row.get("Epic_Upper_Link", "").strip()
             story_summary = row.get("Story", "").strip()
             story_description = row.get("Story_Description(description)", "").strip()
+            story_upper_link = row.get("Story_Upper_Link", "").strip()
             task_summary = row.get("RE_Task", row.get("RE Task", "")).strip()
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -195,6 +261,15 @@ def process_csv(project_key, csv_path):
             if not epic_key:
                 continue  # Skip stories/tasks if Epic creation failed
 
+            # --- EPIC UPPER LINK ---
+            if epic_upper_link and epic_key:
+                if not is_already_linked(epic_key, epic_upper_link, "Needs"):
+                    # Epic needs Epic_Upper_Link
+                    create_issue_link(epic_key, epic_upper_link, "Needs", writer)
+                else:
+                    print(f"Epic {epic_key} already needs {epic_upper_link}")
+                    writer.writerow([timestamp, "Link Exists", epic_key, "Link", epic_upper_link, "Already needs"])
+
             # --- STORY ---
             story_issue = find_issue_by_summary(story_summary, project_key)
             if isinstance(story_issue, dict):
@@ -217,6 +292,16 @@ def process_csv(project_key, csv_path):
             else:
                 print(f"Warning: Unexpected response for Story '{story_summary}': {story_issue}")
                 writer.writerow([timestamp, "Failed", "", "Story", epic_key, "Unexpected response"])
+                story_key = None
+
+            # --- STORY UPPER LINK ---
+            if story_upper_link and story_key:
+                if not is_already_linked(story_key, story_upper_link, "Needs"):
+                    # Story needs Story_Upper_Link
+                    create_issue_link(story_key, story_upper_link, "Needs", writer)
+                else:
+                    print(f"Story {story_key} already needs {story_upper_link}")
+                    writer.writerow([timestamp, "Link Exists", story_key, "Link", story_upper_link, "Already needs"])
 
             # --- RE TASK ---
             task_issue = find_issue_by_summary(task_summary, project_key)
@@ -291,8 +376,13 @@ def bulk_replace_text_in_project(project_key, old_text, new_text):
             print(f"No change for {key}")
 
 if __name__ == "__main__":
+    if len(sys.argv) == 2 and sys.argv[1] == "--list-link-types":
+        get_available_link_types()
+        sys.exit(0)
+    
     if len(sys.argv) != 3:
         print("Usage: python jira_sync.py <PROJECT_KEY> <CSV_FILENAME>")
+        print("   or: python jira_sync.py --list-link-types")
         sys.exit(1)
 
     project_key = sys.argv[1]
