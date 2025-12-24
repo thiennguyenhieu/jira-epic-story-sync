@@ -16,7 +16,7 @@ pip install -r requirements.txt
 ### 2️⃣ Configure environment variables
 (Use set on Windows or export on macOS/Linux)
 ```bash
-set JIRA_URL=https://jira.bsh-group.com
+set JIRA_URL=your_jira_url
 set JIRA_TOKEN=your_personal_access_token
 ```
 ## 🚀 Basic Usage
@@ -27,7 +27,6 @@ python jira_sync.py <PROJECT_KEY> <CSV_FILENAME>
 This will:
 - Create missing Epics, Stories, and Tasks
 - Ensure each Story/Task is correctly linked to its Epic
-- Automatically detect or fall back to customfield_10014 for Epic Link
 - Export a structured log file: jira_log_YYYYMMDD_HHMMSS.csv
 
 ## 🧩 Additional Commands
@@ -40,4 +39,5 @@ This will:
 | `python jira_sync.py --list-sprint-issues <SPRINT_ID>` | List all Story, Task, and Bug issues in the given sprint |
 | `python jira_sync.py --create-subtasks <SPRINT_ID>` | For every Story, Task, and Bug in the sprint, ensure subtasks **Implement**, **Review**, and **Test** exist |
 | `python jira_sync.py --create-subtasks-for <ISSUE_KEY>` | Create subtasks (**Implement**, **Review**, **Test**) for a single issue |
+
 | `python jira_sync.py --replace-text <PROJECT_KEY> <OLD_TEXT> <NEW_TEXT>` | Replace `OLD_TEXT` with `NEW_TEXT` in issue summaries/descriptions |
