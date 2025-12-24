@@ -39,5 +39,4 @@ This will:
 | `python jira_sync.py --list-sprint-issues <SPRINT_ID>` | List all Story, Task, and Bug issues in the given sprint |
 | `python jira_sync.py --create-subtasks <SPRINT_ID>` | For every Story, Task, and Bug in the sprint, ensure subtasks **Implement**, **Review**, and **Test** exist |
 | `python jira_sync.py --create-subtasks-for <ISSUE_KEY>` | Create subtasks (**Implement**, **Review**, **Test**) for a single issue |
-
 | `python jira_sync.py --replace-text <PROJECT_KEY> <OLD_TEXT> <NEW_TEXT>` | Replace `OLD_TEXT` with `NEW_TEXT` in issue summaries/descriptions |
